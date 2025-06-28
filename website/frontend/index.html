@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>AI Audio Denoiser - Clean Your Audio Recordings</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://unpkg.com/wavesurfer.js"></script>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="min-h-screen flex flex-col items-center text-white">
+
+  <!-- Navigation -->
+  <nav class="w-full py-4 px-6 flex justify-between items-center">
+    <div class="flex items-center space-x-2">
+      <i class="fas fa-microphone-alt text-2xl text-indigo-300"></i>
+      <span class="text-xl font-bold bg-gradient-to-r from-indigo-300 to-purple-400 bg-clip-text text-transparent">AudioClean AI</span>
+    </div>
+    <div class="hidden md:flex space-x-6">
+      <a href="#" class="hover:text-indigo-200 transition">Home</a>
+      <a href="#" class="hover:text-indigo-200 transition">How It Works</a>
+      <a href="#" class="hover:text-indigo-200 transition">Contact</a>
+    </div>
+    <button class="md:hidden text-2xl">
+      <i class="fas fa-bars"></i>
+    </button>
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="w-full max-w-6xl px-6 py-12 flex flex-col md:flex-row items-center justify-between">
+    <div class="md:w-1/2 mb-10 md:mb-0">
+      <h1 class="text-4xl md:text-5xl font-bold mb-6 leading-tight">
+        <span class="bg-gradient-to-r from-indigo-300 to-purple-400 bg-clip-text text-transparent">AI-Powered</span> Audio Denoising
+      </h1>
+      <p class="text-lg text-gray-200 mb-8">
+        Remove background noise, enhance speech clarity, and improve audio quality with our advanced AI technology. Perfect for podcasts, voiceovers, and recordings.
+      </p>
+    </div>
+    <div class="md:w-1/2 flex justify-center">
+      <div class="glass-card p-6 w-full max-w-md">
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-xl font-semibold">Audio Cleaner</h2>
+          <div class="flex space-x-2">
+            <button class="tooltip p-2 rounded-full hover:bg-white/10">
+              <i class="fas fa-info-circle"></i>
+              <span class="tooltip-text">Supports WAV, MP3, and OGG formats up to 50MB</span>
+            </button>
+            <button class="p-2 rounded-full hover:bg-white/10">
+              <i class="fas fa-cog"></i>
+            </button>
+          </div>
+        </div>
+        
+        <div class="space-y-6">
+          <div class="text-center">
+            <div class="border-2 border-dashed border-indigo-300/50 rounded-xl p-8 mb-4 hover:bg-white/5 transition cursor-pointer">
+              <i class="fas fa-cloud-upload-alt text-4xl text-indigo-300 mb-3"></i>
+              <p class="text-gray-300">Drag & drop audio file or</p>
+              <button class="btn btn-primary mt-3 px-4 py-2 rounded-lg text-sm">
+                <i class="fas fa-folder-open mr-2"></i> Browse Files
+              </button>
+            </div>
+            <p class="text-sm text-gray-400">Or record directly from your microphone</p>
+          </div>
+          
+          <div class="space-x-4 flex justify-center">
+            <button id="recordBtn" class="btn btn-primary px-4 py-2 rounded-xl">
+              <i class="fas fa-microphone mr-2"></i> Record
+            </button>
+            <button id="stopBtn" class="btn btn-danger px-4 py-2 rounded-xl" disabled>
+              <i class="fas fa-stop mr-2"></i> Stop
+            </button>
+          </div>
+          
+          <div class="meter">
+            <div id="volumeMeter" class="meter-bar"></div>
+          </div>
+          <p id="recordingStatus" class="text-center text-sm text-gray-300 hidden">
+            <i class="fas fa-circle text-red-500 animate-pulse mr-2"></i> Recording...
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Audio Visualization Section -->
+  <section id="audioSection" class="w-full max-w-4xl px-6 py-8 glass-card mx-6 mb-12 hidden">
+    <div class="flex justify-between items-center mb-6">
+      <h2 class="text-2xl font-semibold">Audio Processing</h2>
+      <div id="processingTime" class="text-sm text-gray-300 hidden">
+        <i class="fas fa-clock mr-2"></i> Processing: <span id="timeValue">0</span>s
+      </div>
+    </div>
+    
+    <div id="loader" class="hidden mb-6">
+      <div class="flex flex-col items-center">
+        <div class="spinner mb-4"></div>
+        <p class="text-lg mb-2">AI is cleaning your audio...</p>
+        <p class="text-sm text-gray-300">This usually takes 10-30 seconds depending on length</p>
+      </div>
+    </div>
+    
+    <div class="space-y-8">
+      <div>
+        <div class="flex justify-between items-center mb-2">
+          <h3 class="text-lg font-medium">
+            <i class="fas fa-volume-up text-indigo-300 mr-2"></i> Original Audio
+          </h3>
+          <div class="flex space-x-2">
+            <button id="playOriginalBtn" class="p-2 rounded-full hover:bg-white/10">
+              <i class="fas fa-play"></i>
+            </button>
+            <button id="downloadOriginalBtn" class="p-2 rounded-full hover:bg-white/10 tooltip">
+              <i class="fas fa-download"></i>
+              <span class="tooltip-text">Download original</span>
+            </button>
+          </div>
+        </div>
+        <div id="waveform-original" class="bg-white bg-opacity-5 rounded-lg h-32"></div>
+        <div class="flex justify-between text-xs text-gray-400 mt-1">
+          <span id="originalDuration">00:00</span>
+          <span id="originalFileSize">0 MB</span>
+        </div>
+      </div>
+      
+      <div>
+        <div class="flex justify-between items-center mb-2">
+          <h3 class="text-lg font-medium">
+            <i class="fas fa-magic text-purple-300 mr-2"></i> Denoised Audio
+          </h3>
+          <div class="flex space-x-2">
+            <button id="playDenoisedBtn" class="p-2 rounded-full hover:bg-white/10" disabled>
+              <i class="fas fa-play"></i>
+            </button>
+            <a id="downloadBtn" href="#" download="denoised.wav"
+               class="btn btn-secondary px-4 py-2 rounded-lg hidden">
+              <i class="fas fa-download mr-2"></i> Download
+            </a>
+          </div>
+        </div>
+        <div id="waveform-denoised" class="bg-white bg-opacity-5 rounded-lg h-32"></div>
+        <div class="flex justify-between text-xs text-gray-400 mt-1">
+          <span id="denoisedDuration">00:00</span>
+          <span id="denoisedFileSize">0 MB</span>
+        </div>
+      </div>
+    </div>
+    
+    <div id="resultsStats" class="mt-8 hidden">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="glass-card p-4 rounded-lg">
+          <div class="text-sm text-gray-300 mb-1">Noise Reduction</div>
+          <div class="text-2xl font-bold text-green-400">92%</div>
+        </div>
+        <div class="glass-card p-4 rounded-lg">
+          <div class="text-sm text-gray-300 mb-1">Speech Clarity</div>
+          <div class="text-2xl font-bold text-blue-400">+35%</div>
+        </div>
+        <div class="glass-card p-4 rounded-lg">
+          <div class="text-sm text-gray-300 mb-1">Quality Improvement</div>
+          <div class="text-2xl font-bold text-purple-400">4.8x</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features Section -->
+  <section class="w-full bg-gradient-to-b from-indigo-900/30 to-transparent py-16">
+    <div class="max-w-6xl mx-auto px-6">
+      <h2 class="text-3xl font-bold text-center mb-4">Advanced Audio Processing Features</h2>
+      <p class="text-lg text-gray-300 text-center max-w-2xl mx-auto mb-12">
+        Our AI technology provides professional-grade audio enhancement with just one click
+      </p>
+      
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div class="feature-card glass-card p-6 rounded-xl">
+          <div class="text-indigo-300 text-3xl mb-4">
+            <i class="fas fa-noise-reduction"></i>
+          </div>
+          <h3 class="text-xl font-semibold mb-3">Noise Reduction</h3>
+          <p class="text-gray-300">
+            Eliminate background noise, hums, and hisses while preserving voice clarity and quality.
+          </p>
+        </div>
+        
+        <div class="feature-card glass-card p-6 rounded-xl">
+          <div class="text-purple-300 text-3xl mb-4">
+            <i class="fas fa-voice"></i>
+          </div>
+          <h3 class="text-xl font-semibold mb-3">Speech Enhancement</h3>
+          <p class="text-gray-300">
+            AI-powered algorithms that enhance vocal frequencies for crystal clear speech.
+          </p>
+        </div>
+        
+        <div class="feature-card glass-card p-6 rounded-xl">
+          <div class="text-blue-300 text-3xl mb-4">
+            <i class="fas fa-file-audio"></i>
+          </div>
+          <h3 class="text-xl font-semibold mb-3">Multi-Format Support</h3>
+          <p class="text-gray-300">
+            Works with WAV, MP3, OGG, and more. Process files up to 50MB in size.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- CTA Section -->
+  <section class="w-full max-w-4xl mx-auto px-6 py-12 text-center">
+    <h2 class="text-3xl font-bold mb-6">Ready to Transform Your Audio?</h2>
+    <p class="text-lg text-gray-300 mb-8 max-w-2xl mx-auto">
+      Join thousands of creators who are already using AudioClean AI to enhance their recordings.
+    </p>
+    <button id="ctaRecordBtn" class="btn btn-primary px-8 py-4 rounded-xl text-lg shadow-lg">
+      <i class="fas fa-microphone mr-3"></i> Start Recording Now
+    </button>
+  </section>
+
+  <!-- Footer -->
+  <footer class="w-full bg-gray-900/50 py-8 mt-12">
+    <div class="max-w-6xl mx-auto px-6">
+      <div class="flex flex-col md:flex-row justify-between items-center">
+        <div class="flex items-center space-x-2 mb-4 md:mb-0">
+          <i class="fas fa-microphone-alt text-2xl text-indigo-300"></i>
+          <span class="text-xl font-bold">AudioClean AI</span>
+        </div>
+        
+        <div class="flex space-x-6 mb-4 md:mb-0">
+          <a href="#" class="hover:text-indigo-300 transition">Privacy</a>
+          <a href="#" class="hover:text-indigo-300 transition">Terms</a>
+          <a href="#" class="hover:text-indigo-300 transition">API</a>
+          <a href="#" class="hover:text-indigo-300 transition">Contact</a>
+        </div>
+        
+        <div class="flex space-x-4">
+          <a href="#" class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition">
+            <i class="fab fa-twitter"></i>
+          </a>
+          <a href="#" class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition">
+            <i class="fab fa-github"></i>
+          </a>
+          <a href="#" class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition">
+            <i class="fab fa-discord"></i>
+          </a>
+        </div>
+      </div>
+      
+      <div class="border-t border-gray-700 mt-6 pt-6 text-center text-sm text-gray-400">
+        © 2025 AudioClean AI. All rights reserved. Made with <i class="fas fa-heart text-red-400"></i> by Your Name
+      </div>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
+<button onclick="startProcessing()">Record & Play</button>
+<audio id="audioPlayer" controls style="display:none;"></audio>

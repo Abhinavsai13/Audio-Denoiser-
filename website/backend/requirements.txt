@@ -1,0 +1,8 @@
+flask
+flask-cors
+tensorflow
+librosa
+numpy
+soundfile
+pyaudio
+keyboard
